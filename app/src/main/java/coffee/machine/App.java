@@ -3,12 +3,28 @@
  */
 package coffee.machine;
 
+import coffee.machine.spec.CoffeeMachineTestSpecFactory;
+import coffee.machine.spec.TestResult;
+
+import java.io.InputStreamReader;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 public class App {
-    public String getGreeting() {
-        return "Hello World!";
+    public static void main(String[] args) {
+        var spec = CoffeeMachineTestSpecFactory.loadSpec(new InputStreamReader(System.in));
+
+        CoffeeMachine coffeeMachine = CoffeeMachineFactory.create(spec.slotCount(), spec.ingredients());
+
+        List<String> testResults = spec.beverages()
+                .entrySet()
+                .parallelStream()
+                .map(entry -> new TestResult(entry.getKey(), coffeeMachine.brew(entry.getValue())))
+                .map(TestResult::result)
+                .map(CompletableFuture::join)
+                .toList();
+
+        testResults.forEach(System.out::println);
     }
 
-    public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
-    }
 }
